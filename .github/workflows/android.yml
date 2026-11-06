@@ -4,45 +4,52 @@ name: Build CyberYKS APK
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout source
+      - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             git zip unzip \
-            python3-pip python3-venv \
-            openjdk-17-jdk \
-            build-essential \
             autoconf automake libtool \
             pkg-config zlib1g-dev \
+            libncurses5-dev libncursesw5-dev \
             libffi-dev libssl-dev \
-            libltdl-dev cmake
+            cmake build-essential
 
-      - name: Setup Python environment
+      - name: Install Python packages
         run: |
-          python3 -m venv .venv
-          .venv/bin/python -m pip install --upgrade pip setuptools wheel
-          .venv/bin/python -m pip install "Cython==0.29.36"
-          .venv/bin/python -m pip install buildozer
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install "Cython==0.29.36"
+          python -m pip install buildozer
 
-      - name: Verify Cython
+      - name: Check Cython
         run: |
-          .venv/bin/python -m cython --version
-          .venv/bin/buildozer --version
+          which cython
+          cython --version
 
-      - name: Build Android APK
+      - name: Build APK
         run: |
-          .venv/bin/buildozer android debug
+          buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
